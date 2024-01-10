@@ -26,8 +26,10 @@
 </template>
 
 <script lang="ts" setup>
-import router from '@/router';
-import { computed, reactive } from 'vue';
+import { computed, inject, reactive } from 'vue';
+import { useSelfUser } from '@/composables/useSelfUser';
+
+const selfUserComposable = inject<ReturnType<typeof useSelfUser>>('selfUserComposable');
 
 const data = reactive({
   email: '',
@@ -45,20 +47,6 @@ const signUp = () => {
     return;
   }
 
-  fetch('http://localhost:3000/signup', {
-    method: 'POST',
-    credentials: 'include',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      email: data.email,
-      password: data.password
-    })
-  })
-    .then((res) => res.json())
-    .then((res) => {
-      router.push('/login');
-    });
+  selfUserComposable?.signUp(data.email, data.password);
 };
 </script>

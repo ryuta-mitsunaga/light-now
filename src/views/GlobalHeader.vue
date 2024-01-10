@@ -1,7 +1,7 @@
 <template>
-  <div class="d-flex justify-content-between">
+  <div class="bg-light d-flex justify-content-between align-items-center">
     <h1>未定</h1>
 
-    <div>logout</div>
+    <div>ログアウト</div>
   </div>
 </template>

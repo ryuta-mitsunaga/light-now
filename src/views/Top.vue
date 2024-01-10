@@ -18,9 +18,10 @@
         @click="openDetail(store)"
         class="fw-bold fs-5 mb-0 text-decoration-underline"
         data-bs-toggle="modal"
-        data-bs-target="#exampleModal"
+        data-bs-target="#storeDetailModal"
       >
         {{ store.name }}
+        {{ store.genre }}
       </h2>
       <div>{{ store.category }}</div>
       <div>
@@ -31,15 +32,17 @@
           10%
         </meter>
       </div>
+
+      <hr />
     </div>
   </div>
 
   <!-- Modal -->
   <div
     class="modal fade modal-xl"
-    id="exampleModal"
+    id="storeDetailModal"
     tabindex="-1"
-    aria-labelledby="exampleModalLabel"
+    aria-labelledby="storeDetailModalLabel"
     aria-hidden="true"
   >
     <div class="modal-dialog">
@@ -63,16 +66,21 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, reactive, ref } from 'vue';
+import router from '@/router';
+import { computed, inject, reactive, ref } from 'vue';
+import { useSelfUser } from '@/composables/useSelfUser';
+import type { Store } from '@/types';
 
-type Store = {
-  id: number;
-  name: string;
-  category: string;
-  interestCount: number;
-  url: string;
-  isSent: boolean;
-};
+const selfUserComposable = inject<ReturnType<typeof useSelfUser>>('selfUserComposable');
+
+// type Store = {
+//   id: number;
+//   name: string;
+//   category: string;
+//   interestCount: number;
+//   url: string;
+//   isSent: boolean;
+// };
 
 const data = reactive<{
   selectingStore: Store | null;
@@ -80,45 +88,84 @@ const data = reactive<{
   selectingStore: null
 });
 
-const stores = ref([
-  {
-    id: 1,
-    name: 'シースケープ　テラス・ダイニング',
-    category: '焼肉',
-    interestCount: 10,
-    url: 'https://www.hotpepper.jp/strJ001266951/',
-    isSent: false
-  },
-  {
-    id: 2,
-    name: 'store2',
-    category: 'カレー',
-    interestCount: 20,
-    url: 'https://www.hotpepper.jp/strJ001266951/',
-    isSent: false
-  },
-  {
-    id: 3,
-    name: 'store3',
-    category: '寿司',
-    interestCount: 90,
-    url: 'https://www.hotpepper.jp/strJ001266951/',
-    isSent: false
-  }
+const stores = ref<Store[]>([
+  // {
+  //   id: 1,
+  //   name: 'シースケープ　テラス・ダイニング',
+  //   category: '焼肉',
+  //   interestCount: 10,
+  //   url: 'https://www.hotpepper.jp/strJ001266951/',
+  //   isSent: false
+  // },
+  // {
+  //   id: 2,
+  //   name: 'store2',
+  //   category: 'カレー',
+  //   interestCount: 20,
+  //   url: 'https://www.hotpepper.jp/strJ001266951/',
+  //   isSent: false
+  // },
+  // {
+  //   id: 3,
+  //   name: 'store3',
+  //   category: '寿司',
+  //   interestCount: 90,
+  //   url: 'https://www.hotpepper.jp/strJ001266951/',
+  //   isSent: false
+  // }
 ]);
 
 const openDetail = (store: Store) => {
   data.selectingStore = store;
 };
 
-const interest = (store: Store) => {
-  const target = stores.value.find((s) => s.id === store.id);
+const userInfo = computed(() => {
+  return selfUserComposable?.state.value;
+});
 
-  if (target && target.interestCount > 100) {
-    target.isSent = true;
-  } else if (target) {
-    target.interestCount += 1;
-  }
+const getStores = () => {
+  if (!userInfo.value) return;
+
+  fetch(`http://localhost:3000/user/${userInfo.value.id}/store`, {
+    method: 'GET',
+    credentials: 'include'
+  })
+    .then((res) => res.json())
+    .then((res) => {
+      if (res.status !== 200) {
+        alert(res.message);
+        return;
+      }
+      stores.value = res.stores.columns;
+    });
+};
+getStores();
+
+const interest = (store: Store) => {
+  if (!userInfo.value) return;
+
+  fetch(`http://localhost:3000/user/${userInfo.value.id}/store/1/interest`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: {
+      'Content-Type': 'application/json'
+    }
+  })
+    .then((res) => res.json())
+    .then((res) => {
+      if (res.status !== 200) {
+        alert(res.message);
+        return;
+      }
+      router.push('/');
+    });
+
+  // const target = stores.value.find((s) => s.id === store.id);
+  // if (target && target.interestCount > 100) {
+  //   target.isSent = true;
+  // } else if (target) {
+  //   target.interestCount += 1;
+  // }
 };
 </script>
 

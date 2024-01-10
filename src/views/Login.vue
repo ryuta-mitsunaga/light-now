@@ -1,5 +1,8 @@
 <template>
-  <form class="needs-validation" @submit.prevent="login">
+  <form
+    class="needs-validation"
+    @submit.prevent="selfUserComposable?.login(data.email, data.password)"
+  >
     <div class="mb-3">
       <label for="email" class="form-label">Email address</label>
       <input type="email" v-model="data.email" class="form-control" id="email" required />
@@ -15,33 +18,13 @@
 </template>
 
 <script lang="ts" setup>
-import router from '@/router';
-import { reactive } from 'vue';
+import { inject, reactive } from 'vue';
+import { useSelfUser } from '@/composables/useSelfUser';
+
+const selfUserComposable = inject<ReturnType<typeof useSelfUser>>('selfUserComposable');
 
 const data = reactive({
   email: '',
   password: ''
 });
-
-const login = () => {
-  fetch('http://localhost:3000/login', {
-    method: 'POST',
-    credentials: 'include',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      email: data.email,
-      password: data.password
-    })
-  })
-    .then((res) => res.json())
-    .then((res) => {
-      if (res.status !== 200) {
-        alert(res.message);
-        return;
-      }
-      router.push('/');
-    });
-};
 </script>
