@@ -4,6 +4,19 @@
   color: #495057;
 }
 
+.btn-action {
+  cursor: pointer;
+  transition: transform 0.2s;
+  display: inline-block;
+  &:active {
+    transform: scale(0.95);
+  }
+}
+
+.cursor-pointer {
+  cursor: pointer;
+}
+
 /* a,
 .green {
   text-decoration: none;

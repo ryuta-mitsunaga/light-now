@@ -2,7 +2,9 @@
   <header class="sticky-top">
     <GlobalHeader />
   </header>
-  <RouterView />
+  <div class="p-3">
+    <RouterView />
+  </div>
 </template>
 
 <script lang="ts" setup>
