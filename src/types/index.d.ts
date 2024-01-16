@@ -28,3 +28,13 @@ export interface IndexStoreResponse extends ResponseStatus, Paginate {
   stores: Store[];
   total: number;
 }
+
+type LineAccount = {
+  id: number;
+  name: string;
+  picture_url: string;
+};
+
+export interface IndexLineAccountResponse extends ResponseStatus {
+  line_accounts: LineAccount[];
+}

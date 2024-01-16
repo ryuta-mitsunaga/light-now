@@ -1,9 +1,11 @@
 <template>
-  <header class="sticky-top">
-    <GlobalHeader />
-  </header>
-  <div class="p-3">
-    <RouterView />
+  <div>
+    <header class="sticky-top">
+      <GlobalHeader />
+    </header>
+    <div class="px-3 py-2">
+      <RouterView />
+    </div>
   </div>
 </template>
 

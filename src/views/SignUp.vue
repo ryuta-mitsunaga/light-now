@@ -21,7 +21,34 @@
       <p v-show="isConfirmPasswordInValid" class="text-danger">パスワードが間違っています</p>
     </div>
 
-    <button type="button" class="btn btn-primary" @click="signUp">登録</button>
+    <div class="mb-3">
+      <label for="name" class="form-label">name</label>
+      <input type="text" v-model="data.name" class="form-control" id="name" required />
+    </div>
+
+    <div class="mb-3">
+      <label for="lineChannelSecret" class="form-label">line channel secret</label>
+      <input
+        type="text"
+        v-model="data.lineChannelSecret"
+        class="form-control"
+        id="lineChannelSecret"
+        required
+      />
+    </div>
+
+    <div class="mb-3">
+      <label for="lineChannelToken" class="form-label">line channel token</label>
+      <input
+        type="text"
+        v-model="data.lineChannelToken"
+        class="form-control"
+        id="lineChannelToken"
+        required
+      />
+    </div>
+
+    <button type="button" class="btn btn-success" @click="signUp">登録</button>
   </form>
 </template>
 
@@ -34,7 +61,10 @@ const selfUserComposable = inject<ReturnType<typeof useSelfUser>>('selfUserCompo
 const data = reactive({
   email: '',
   password: '',
-  confirmPassword: ''
+  confirmPassword: '',
+  name: '',
+  lineChannelSecret: '',
+  lineChannelToken: ''
 });
 
 const isConfirmPasswordInValid = computed(() => {
@@ -47,6 +77,12 @@ const signUp = () => {
     return;
   }
 
-  selfUserComposable?.signUp(data.email, data.password);
+  selfUserComposable?.signUp(
+    data.email,
+    data.password,
+    data.name,
+    data.lineChannelSecret,
+    data.lineChannelToken
+  );
 };
 </script>

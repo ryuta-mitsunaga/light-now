@@ -4,6 +4,9 @@ import { computed, ref } from 'vue';
 export type User = {
   id: number;
   email: string;
+  name: string;
+  lineChannelSecret: string;
+  lineChannelToken: string;
 };
 
 export const useSelfUser = () => {
@@ -30,14 +33,23 @@ export const useSelfUser = () => {
 
         state.value = {
           id: res.user.id,
-          email: res.user.email
+          email: res.user.email,
+          name: res.user.name,
+          lineChannelSecret: res.user.lineChannelSecret,
+          lineChannelToken: res.user.lineChannelToken
         };
 
         router.push('/');
       });
   };
 
-  const signUp = (email: string, password: string) => {
+  const signUp = (
+    email: string,
+    password: string,
+    name: string,
+    lineChannelSecret: string,
+    lineChannelToken: string
+  ) => {
     fetch('http://localhost:3000/signup', {
       method: 'POST',
       credentials: 'include',
@@ -46,7 +58,10 @@ export const useSelfUser = () => {
       },
       body: JSON.stringify({
         email,
-        password
+        password,
+        name,
+        lineChannelSecret,
+        lineChannelToken
       })
     })
       .then((res) => res.json())

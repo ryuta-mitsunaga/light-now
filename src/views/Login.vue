@@ -12,7 +12,7 @@
       <input type="password" v-model="data.password" class="form-control" id="password" required />
     </div>
 
-    <button type="submit" class="btn btn-primary me-2">ログイン</button>
+    <button type="submit" class="btn btn-success me-2">ログイン</button>
     <button type="button" class="btn btn-secondary" @click="$router.push('signUp')">登録</button>
   </form>
 </template>
