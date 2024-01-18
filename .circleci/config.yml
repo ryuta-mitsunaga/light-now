@@ -36,18 +36,20 @@ workflows:
   s3-example:
     jobs:
       - aws-s3/copy:
+          context: aws
           auth:
             - aws-cli/setup:
                 profile_name: ryuta-mitsunaga
-                role_arn: arn:aws:iam::743637611281:role/deploy-circleci
+                role_arn: arn:aws:iam::743637611281:role/circle-ci-role
                 role_session_name: setup
           from: ./dist
           profile_name: ryuta-mitsunaga
           to: s3://lightnoweat.com
       - aws-s3/sync:
+          context: aws
           auth:
             - aws-cli/setup:
-                role_arn: arn:aws:iam::743637611281:role/deploy-circleci
+                role_arn: arn:aws:iam::743637611281:role/circle-ci-role
                 role_session_name: setup
           from: bucket
           to: s3://lightnoweat.com
