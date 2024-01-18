@@ -42,14 +42,6 @@ workflows:
                 profile_name: ryuta-mitsunaga
                 role_arn: arn:aws:iam::743637611281:role/circle-ci-role
                 role_session_name: setup
-          from: .
+          from: .light-now/dist
           profile_name: ryuta-mitsunaga
-          to: s3://lightnoweat.com
-      - aws-s3/sync:
-          context: aws
-          auth:
-            - aws-cli/setup:
-                role_arn: arn:aws:iam::743637611281:role/circle-ci-role
-                role_session_name: setup
-          from: bucket
           to: s3://lightnoweat.com
