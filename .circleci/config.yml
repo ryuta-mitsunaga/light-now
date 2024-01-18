@@ -16,21 +16,20 @@ jobs:
       - run:
           command: pnpm build
           name: Build app
-      - run: ls
 
 workflows:
   version: 2
   build_deploy:
     jobs:
       - build_deploy
-      # - aws-s3/sync:
-      #     context: aws
-      #     auth:
-      #       - aws-cli/setup:
-      #           role_arn: arn:aws:iam::743637611281:role/circle-ci-role
-      #           role_session_name: setup
-      #     from: ./dist
-      #     to: s3://lightnoweat.com
+      - aws-s3/sync:
+          context: aws
+          auth:
+            - aws-cli/setup:
+                role_arn: arn:aws:iam::743637611281:role/circle-ci-role
+                role_session_name: setup
+          from: ./dist
+          to: s3://lightnoweat.com
 # version: 2.1
 # orbs:
 #   aws-cli: circleci/aws-cli@4.0
