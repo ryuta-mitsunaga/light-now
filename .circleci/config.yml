@@ -24,6 +24,6 @@ workflows:
       - aws-s3/sync:
           auth:
             - aws-cli/setup:
-                role_arn: arn:aws:iam::743637611281:user/ryuta-mitsunaga
+                role_arn: arn:aws:iam::743637611281:policy/circleci
           from: bucket
           to: s3://lightnoweat.com
