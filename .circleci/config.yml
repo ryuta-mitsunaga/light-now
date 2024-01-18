@@ -24,6 +24,8 @@ workflows:
     jobs:
       - build_deploy
       - aws-s3/sync:
+          requires:
+            - build_deploy
           context: aws
           auth:
             - aws-cli/setup:
