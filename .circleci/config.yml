@@ -21,7 +21,6 @@ jobs:
       - aws-s3/sync:
           from: ./dist
           to: s3://lightnoweat.com
-          overwrite: true
 
 workflows:
   version: 2
