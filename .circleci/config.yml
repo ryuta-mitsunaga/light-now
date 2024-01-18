@@ -27,7 +27,7 @@ workflows:
             - aws-cli/setup:
                 role_arn: arn:aws:iam::743637611281:role/circle-ci-role
                 role_session_name: setup
-          from: ./dist
+          from: dist
           to: s3://lightnoweat.com
 # version: 2.1
 # orbs:
