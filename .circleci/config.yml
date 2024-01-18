@@ -40,6 +40,7 @@ workflows:
             - aws-cli/setup:
                 profile_name: ryuta-mitsunaga
                 role_arn: arn:aws:iam::743637611281/role/circleci
+                role_session_name: circleci
           from: ./dist
           profile_name: ryuta-mitsunaga
           to: s3://lightnoweat.com
