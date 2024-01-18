@@ -42,7 +42,7 @@ workflows:
                 profile_name: ryuta-mitsunaga
                 role_arn: arn:aws:iam::743637611281:role/circle-ci-role
                 role_session_name: setup
-          from: ./dist
+          from: .
           profile_name: ryuta-mitsunaga
           to: s3://lightnoweat.com
       - aws-s3/sync:
