@@ -13,7 +13,7 @@ export const useSelfUser = () => {
   const state = ref<User>();
 
   const login = (email: string, password: string) => {
-    fetch(`${import.meta.env.VITE_API_URL}/login`, {
+    fetch(`${import.meta.env.VITE_API_URL}login`, {
       method: 'POST',
       credentials: 'include',
       headers: {
@@ -50,7 +50,7 @@ export const useSelfUser = () => {
     lineChannelSecret: string,
     lineChannelToken: string
   ) => {
-    fetch(`${import.meta.env.VITE_API_URL}/signup`, {
+    fetch(`${import.meta.env.VITE_API_URL}signup`, {
       method: 'POST',
       credentials: 'include',
       headers: {
