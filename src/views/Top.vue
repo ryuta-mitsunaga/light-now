@@ -190,7 +190,7 @@ const getStores = (page?: number) => {
   };
   const query = new URLSearchParams(params);
 
-  fetch(`http://localhost:3000/user/${userInfo.value.id}/store?${query}`, {
+  fetch(`${import.meta.env.VITE_API_URL}user/${userInfo.value.id}/store?${query}`, {
     method: 'GET',
     credentials: 'include'
   })
@@ -210,7 +210,7 @@ getStores();
 const interest = async (store: Store) => {
   if (!userInfo.value || overInterestCount(store)) return;
 
-  fetch(`http://localhost:3000/user/${userInfo.value.id}/store/${store.id}/interest`, {
+  fetch(`${import.meta.env.VITE_API_URL}user/${userInfo.value.id}/store/${store.id}/interest`, {
     method: 'POST',
     credentials: 'include',
     headers: {
@@ -260,7 +260,7 @@ const paginationNum = computed(() => {
 });
 
 const selectLineAccount = async () => {
-  await fetch(`http://localhost:3000/user/1/lineAccount`, {
+  await fetch(`${import.meta.env.VITE_API_URL}user/1/lineAccount`, {
     method: 'GET',
     credentials: 'include'
   })
@@ -281,7 +281,9 @@ const sendLine = (lineAccountId: number) => {
   if (!userInfo.value || !data.sendingStore) return;
 
   fetch(
-    `http://localhost:3000/user/${userInfo.value.id}/store/${data.sendingStore.id}/lineAccount/${lineAccountId}/lineSendMessage`,
+    `${import.meta.env.VITE_API_URL}user/${userInfo.value.id}/store/${
+      data.sendingStore.id
+    }/lineAccount/${lineAccountId}/lineSendMessage`,
     {
       method: 'POST',
       credentials: 'include'

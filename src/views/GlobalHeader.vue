@@ -6,7 +6,7 @@
 
     <nav class="navbar navbar-dark bg-success fixed-top">
       <div class="container-fluid">
-        <a class="navbar-brand" href="#">ライなう2</a>
+        <a class="navbar-brand" href="#">ライなう</a>
         <button
           class="navbar-toggler"
           type="button"
