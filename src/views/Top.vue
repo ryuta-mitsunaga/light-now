@@ -2,19 +2,17 @@
   <div>
     <div class="mb-3">
       <div class="row">
-        <div class="col col-sm-6 d-flex align-items-center">
-          <input
-            type="text"
-            v-model="data.searchWord"
-            class="form-control me-1"
-            placeholder="カテゴリ / 種類 などを入力"
-          />
-          <input
-            type="button"
-            @click="getStores()"
-            class="btn btn-success btn-sm me-2 h-75"
-            value="検索"
-          />
+        <div class="col col-sm-6">
+          <div class="input-group mb-1">
+            <input
+              type="text"
+              v-model="data.searchWord"
+              class="form-control"
+              placeholder="カテゴリ / 種類 などを入力"
+            />
+            <button class="btn btn-outline-success" @click="getStores()" type="button">検索</button>
+          </div>
+
           <div class="d-flex align-items-end">
             <div class="form-check" style="width: 150px">
               <input
@@ -70,7 +68,6 @@
             </li>
           </ul>
         </nav>
-        <!-- <div>{{ data.paginate.total_count }}件</div> -->
       </div>
     </div>
 
@@ -97,16 +94,14 @@
             </div>
           </div>
           <div>
-            <div
+            <button
               @click="interest(store)"
-              class="interest-btn border rounded-3 p-1 d-flex justify-content-center align-items-center"
-              :class="overInterestCount(store) ? '' : 'btn-action'"
+              class="interest-btn btn border rounded-3 p-1 d-flex justify-content-center align-items-center btn-action"
+              :class="overInterestCount(store) ? 'btn-outline-secondary' : 'btn-outline-success'"
             >
-              <span v-if="overInterestCount(store)">
-                <i class="bi bi-send-check"></i>
-              </span>
+              <span v-if="overInterestCount(store)"> リセット </span>
               <span v-else style="font-size: 14px">気になる<i class="bi bi-eye-fill" /></span>
-            </div>
+            </button>
           </div>
         </div>
 
@@ -114,18 +109,69 @@
       </div>
     </div>
 
+    <div v-if="data.showPagination && data.paginate.total_count > 10">
+      <nav aria-label="Store page navigation" class="me-1">
+        <ul class="pagination pagination-sm justify-content-end mb-0">
+          <li
+            v-if="data.paginate.current_page - 1 !== -1"
+            @click="getStores(data.paginate.current_page - 1)"
+            class="page-item"
+          >
+            <span class="page-link" aria-label="Previous">
+              <span aria-hidden="true">&laquo;</span>
+            </span>
+          </li>
+          <template v-for="(page, i) in paginationNum">
+            <span>
+              <li
+                class="page-item"
+                @click="getStores(page)"
+                :class="{ active: page === data.paginate.current_page }"
+              >
+                <span class="page-link">{{ i !== 4 ? page : '...' }}</span>
+              </li>
+            </span>
+          </template>
+
+          <li class="page-item" @click="getStores(data.paginate.total_page)">
+            <span class="page-link">{{ data.paginate.total_page }}</span>
+          </li>
+
+          <li
+            @click="getStores(data.paginate.current_page + 1)"
+            class="page-item"
+            :class="{ disabled: data.paginate.current_page === data.paginate.total_page }"
+          >
+            <div class="page-link" aria-label="Next">
+              <span aria-hidden="true">&raquo;</span>
+            </div>
+          </li>
+        </ul>
+      </nav>
+    </div>
+
     <StoreDetailModal :store="data.selectingStore" @interest="interest" />
-    <SendLineMessageModal :lineAccounts="data.lineAccounts" @sendLine="sendLine" />
+    <SendLineMessageModal :user-groups="userGroups" @sendLine="sendLine" />
   </div>
 </template>
 
 <script lang="ts" setup>
 import { computed, inject, reactive, ref, vModelCheckbox, watch } from 'vue';
 import { useSelfUser } from '@/composables/useSelfUser';
-import type { Store, IndexStoreResponse, IndexLineAccountResponse, LineAccount } from '@/types';
+import type {
+  Store,
+  IndexStoreResponse,
+  IndexLineAccountResponse,
+  LineAccount,
+  IndexLineBot,
+  IndexUserGroup,
+  UserGroup
+} from '@/types';
 import StoreDetailModal from './modals/StoreDetailModal.vue';
 import SendLineMessageModal from './modals/SendLineMessageModal.vue';
 import { Modal } from 'bootstrap';
+import router from '@/router';
+import { customFetch } from '@/services/customFetch';
 
 const selfUserComposable = inject<ReturnType<typeof useSelfUser>>('selfUserComposable');
 
@@ -159,18 +205,13 @@ const openDetail = (store: Store) => {
   data.selectingStore = store;
 };
 
-const userInfo = computed(() => {
-  return selfUserComposable?.state.value;
-});
-
-const getStores = (page?: number) => {
+const getStores = async (page?: number) => {
   if (
-    !userInfo.value ||
-    (data.paginate.current_page &&
-      data.paginate.total_page &&
-      data.paginate.current_page === data.paginate.total_page &&
-      page &&
-      page >= data.paginate.current_page)
+    data.paginate.current_page &&
+    data.paginate.total_page &&
+    data.paginate.current_page === data.paginate.total_page &&
+    page &&
+    page >= data.paginate.current_page
   )
     return;
 
@@ -190,52 +231,42 @@ const getStores = (page?: number) => {
   };
   const query = new URLSearchParams(params);
 
-  fetch(`${import.meta.env.VITE_API_URL}user/${userInfo.value.id}/store?${query}`, {
-    method: 'GET',
-    credentials: 'include'
-  })
-    .then((res) => res.json())
-    .then((res: IndexStoreResponse) => {
-      if (res.status.code !== 200) {
-        alert(res.status.message);
-        return;
-      }
+  customFetch<IndexStoreResponse>(`store?${query}`, 'get').then((res) => {
+    if (!res) return;
 
-      stores.value = res.stores;
-      data.paginate = res.paginate;
-    });
+    stores.value = res.stores;
+    data.paginate = res.paginate;
+  });
 };
 getStores();
 
 const interest = async (store: Store) => {
-  if (!userInfo.value || overInterestCount(store)) return;
+  // 30以上気になる済みの場合はリセット
+  if (overInterestCount(store)) return clearInterest(store);
 
-  fetch(`${import.meta.env.VITE_API_URL}user/${userInfo.value.id}/store/${store.id}/interest`, {
-    method: 'POST',
-    credentials: 'include',
-    headers: {
-      'Content-Type': 'application/json'
-    }
-  })
-    .then((res) => res.json())
-    .then((res) => {
-      if (res.status !== 200) {
-        alert(res.message);
-        return;
+  await customFetch(`store/${store.id}/interest`, 'post');
+
+  stores.value.forEach((s) => {
+    if (s.id === store.id) {
+      s.interest_count++;
+
+      if (overInterestCount(s)) {
+        data.sendingStore = s;
       }
+    }
+  });
 
-      stores.value.forEach((s) => {
-        if (s.id === store.id) {
-          s.interest_count++;
+  if (data.sendingStore) selectLineAccount();
+};
 
-          if (overInterestCount(s)) {
-            data.sendingStore = s;
-          }
-        }
-      });
+const clearInterest = async (store: Store) => {
+  await customFetch(`store/${store.id}/interest`, 'delete');
 
-      if (data.sendingStore) selectLineAccount();
-    });
+  stores.value.forEach((s) => {
+    if (s.id === store.id) {
+      s.interest_count = 0;
+    }
+  });
 };
 
 const overInterestCount = (store: Store) => store.interest_count >= 30;
@@ -259,45 +290,26 @@ const paginationNum = computed(() => {
   return pages;
 });
 
+const userGroups = ref<IndexUserGroup['user_groups']>([]);
 const selectLineAccount = async () => {
-  await fetch(`${import.meta.env.VITE_API_URL}user/1/lineAccount`, {
-    method: 'GET',
-    credentials: 'include'
-  })
-    .then((res) => res.json())
-    .then((res: IndexLineAccountResponse) => {
-      if (res.status.code !== 200) {
-        alert(res.status.message);
-        return;
-      }
+  const res = await customFetch<IndexUserGroup>('userGroups', 'get');
 
-      data.lineAccounts = res.line_accounts;
-    });
+  if (!res) return;
+
+  userGroups.value = res.user_groups;
 
   new Modal('#sendLineMessageModal').show();
 };
 
-const sendLine = (lineAccountId: number) => {
-  if (!userInfo.value || !data.sendingStore) return;
+const sendLine = async (userGroupId: number) => {
+  if (!data.sendingStore) return;
 
-  fetch(
-    `${import.meta.env.VITE_API_URL}user/${userInfo.value.id}/store/${
-      data.sendingStore.id
-    }/lineAccount/${lineAccountId}/lineSendMessage`,
-    {
-      method: 'POST',
-      credentials: 'include'
-    }
-  )
-    .then((res) => res.json())
-    .then((res) => {
-      if (res.status.code !== 200) {
-        alert(res.status.message);
-        return;
-      }
+  await customFetch(
+    `store/${data.sendingStore.id}/userGroup/${userGroupId}/lineSendMessage`,
+    'post'
+  );
 
-      data.sendingStore = null;
-    });
+  data.sendingStore = null;
 };
 
 watch(

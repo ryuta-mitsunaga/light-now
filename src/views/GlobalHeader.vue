@@ -6,7 +6,7 @@
 
     <nav class="navbar navbar-dark bg-success fixed-top">
       <div class="container-fluid">
-        <a class="navbar-brand" href="#">ライなう</a>
+        <router-link class="navbar-brand" to="/">ライなう</router-link>
         <button
           class="navbar-toggler"
           type="button"
@@ -33,14 +33,19 @@
           </div>
           <div class="offcanvas-body text-white">
             <ul class="navbar-nav justify-content-end flex-grow-1 pe-3">
-              <li class="nav-item">
-                <a class="nav-link active" href="#">店舗登録</a>
+              <li class="nav-item" data-bs-dismiss="offcanvas">
+                <router-link class="nav-link active" to="/myPage">マイページ</router-link>
               </li>
-              <li class="nav-item">
-                <a class="nav-link active" href="">ユーザーグループ設定</a>
+              <li class="nav-item" data-bs-dismiss="offcanvas">
+                <router-link class="nav-link active" to="/userGroups"
+                  >ユーザーグループ設定</router-link
+                >
               </li>
-              <li class="nav-item">
-                <a class="nav-link active" aria-current="page" href="#">ログアウト</a>
+              <li class="nav-item" data-bs-dismiss="offcanvas">
+                <router-link class="nav-link active" to="/lineBot">LINEボット設定</router-link>
+              </li>
+              <li class="nav-item" data-bs-dismiss="offcanvas">
+                <a class="nav-link active" aria-current="page" @click="logout">ログアウト</a>
               </li>
             </ul>
           </div>
@@ -49,3 +54,14 @@
     </nav>
   </div>
 </template>
+
+<script setup lang="ts">
+import { useSelfUser } from '@/composables/useSelfUser';
+import { computed, inject } from 'vue';
+
+const selfUser = inject('selfUserComposable') as ReturnType<typeof useSelfUser>;
+
+const logout = () => {
+  selfUser.logout();
+};
+</script>

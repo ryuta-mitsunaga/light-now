@@ -27,25 +27,8 @@
     </div>
 
     <div class="mb-3">
-      <label for="lineChannelSecret" class="form-label">line channel secret</label>
-      <input
-        type="text"
-        v-model="data.lineChannelSecret"
-        class="form-control"
-        id="lineChannelSecret"
-        required
-      />
-    </div>
-
-    <div class="mb-3">
-      <label for="lineChannelToken" class="form-label">line channel token</label>
-      <input
-        type="text"
-        v-model="data.lineChannelToken"
-        class="form-control"
-        id="lineChannelToken"
-        required
-      />
+      <label for="lineUserId" class="form-label">LINEユーザーID</label>
+      <input type="text" v-model="data.lineUserId" class="form-control" id="lineUserId" disabled />
     </div>
 
     <button type="button" class="btn btn-success" @click="signUp">登録</button>
@@ -53,18 +36,36 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, inject, reactive } from 'vue';
+import { computed, inject, onMounted, reactive } from 'vue';
 import { useSelfUser } from '@/composables/useSelfUser';
+import { onBeforeRouteUpdate, useRoute, useRouter } from 'vue-router';
+import { useGlobalAlert } from '@/composables/useGlobalAlert';
 
 const selfUserComposable = inject<ReturnType<typeof useSelfUser>>('selfUserComposable');
 
+const route = useRoute();
+const router = useRouter();
+
+const userId = computed(() => route.params.id as unknown as number);
+
 const data = reactive({
+  id: userId.value,
   email: '',
   password: '',
   confirmPassword: '',
   name: '',
-  lineChannelSecret: '',
-  lineChannelToken: ''
+  lineUserId: route.query.lineUserId as string
+});
+
+const globalAlert = useGlobalAlert();
+
+onMounted(async () => {
+  // 登録済みの場合はログイン画面に遷移
+  const isRegistered = (await selfUserComposable?.isRegistered(data.lineUserId))?.result;
+  if (isRegistered) {
+    globalAlert.show('登録済みです。', 'danger');
+    router.push('/login');
+  }
 });
 
 const isConfirmPasswordInValid = computed(() => {
@@ -77,12 +78,6 @@ const signUp = () => {
     return;
   }
 
-  selfUserComposable?.signUp(
-    data.email,
-    data.password,
-    data.name,
-    data.lineChannelSecret,
-    data.lineChannelToken
-  );
+  selfUserComposable?.update(data);
 };
 </script>

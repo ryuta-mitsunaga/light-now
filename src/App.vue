@@ -4,6 +4,7 @@
       <GlobalHeader />
     </header>
     <div class="px-3 py-2">
+      <div id="globalAlert"></div>
       <RouterView />
     </div>
   </div>
@@ -13,19 +14,13 @@
 import { RouterLink, RouterView } from 'vue-router';
 import GlobalHeader from './views/GlobalHeader.vue';
 import { useSelfUser } from '@/composables/useSelfUser';
-import { provide } from 'vue';
+import { useGlobalAlert } from '@/composables/useGlobalAlert';
+import { computed, provide } from 'vue';
 import router from './router';
 
 const selfUserComposable = useSelfUser();
-provide('selfUserComposable', selfUserComposable);
 
-router.beforeEach((to, from, next) => {
-  if (!['login', 'signUp'].includes((to.name || '') as string) && !selfUserComposable?.isLogin()) {
-    next({ name: 'login' });
-  } else {
-    next();
-  }
-});
+provide('selfUserComposable', selfUserComposable);
 </script>
 
 <style scoped></style>

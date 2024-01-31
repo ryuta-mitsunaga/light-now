@@ -1,73 +1,72 @@
 import router from '@/router';
+import { customFetch } from '@/services/customFetch';
+import type { ResponseStatus, User } from '@/types';
 import { computed, ref } from 'vue';
-
-export type User = {
-  id: number;
-  email: string;
-  name: string;
-  lineChannelSecret: string;
-  lineChannelToken: string;
-};
 
 export const useSelfUser = () => {
   const state = ref<User>();
 
   const login = (email: string, password: string) => {
-    fetch(`${import.meta.env.VITE_API_URL}login`, {
-      method: 'POST',
-      credentials: 'include',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        email,
-        password
-      })
-    })
-      .then((res) => res.json())
-      .then((res) => {
-        if (res.status !== 200) {
-          alert('ログインに失敗しました');
-          return;
-        }
+    const request = JSON.stringify({
+      email,
+      password
+    });
 
-        state.value = {
-          id: res.user.id,
-          email: res.user.email,
-          name: res.user.name,
-          lineChannelSecret: res.user.lineChannelSecret,
-          lineChannelToken: res.user.lineChannelToken
-        };
+    customFetch<{ user: User }>('login', 'post', request).then((res) => {
+      if (!res) return;
 
-        router.push('/');
-      });
+      state.value = {
+        id: res.user.id,
+        email: res.user.email,
+        name: res.user.name,
+        lineUserId: res.user.lineUserId
+      };
+
+      router.push('/');
+    });
   };
 
-  const signUp = (
-    email: string,
-    password: string,
-    name: string,
-    lineChannelSecret: string,
-    lineChannelToken: string
-  ) => {
-    fetch(`${import.meta.env.VITE_API_URL}signup`, {
-      method: 'POST',
-      credentials: 'include',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        email,
-        password,
-        name,
-        lineChannelSecret,
-        lineChannelToken
+  const signUp = (email: string, password: string, name: string, lineUserId: string) => {
+    customFetch<{ user: User }>(
+      'signup',
+      'post',
+      JSON.stringify({ email, password, name, lineUserId })
+    ).then(() => router.push('/login'));
+  };
+
+  const logout = async () => {
+    await customFetch('logout', 'delete');
+
+    state.value = undefined;
+    router.push('/login');
+  };
+
+  const update = async (user: User & { password: string }) => {
+    customFetch<{ user: User }>(
+      `user/${user.id}`,
+      'put',
+      JSON.stringify({
+        email: user.email,
+        password: user.password,
+        name: user.name,
+        lineUserId: user.lineUserId
       })
-    })
-      .then((res) => res.json())
-      .then((res) => {
-        router.push('/login');
-      });
+    ).then(() => router.push('/login'));
+  };
+
+  const isRegistered = async (lineUserId: string) => {
+    return customFetch<ResponseStatus & { result: boolean }>(
+      `lineUserId/${lineUserId}/isRegistered`,
+      'get'
+    );
+  };
+
+  const getUser = async () => {
+    return customFetch<{ user: User }>('user', 'get').then((res) => {
+      if (!res) return;
+
+      state.value = res.user;
+    });
   };
 
   const isLogin = () => !!state.value;
@@ -76,6 +75,10 @@ export const useSelfUser = () => {
     state,
     login,
     signUp,
-    isLogin
+    logout,
+    isLogin,
+    update,
+    isRegistered,
+    getUser
   };
 };

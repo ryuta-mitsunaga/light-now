@@ -19,17 +19,35 @@
             ></button>
           </div>
           <div class="modal-body">
-            <div v-for="lineAccount in lineAccounts">
-              <input
-                class="btn btn-success"
-                type="button"
-                value="選択"
-                data-bs-toggle="modal"
-                data-bs-target="#sendConfirmModal"
-                @click="data.selectLineAccount = lineAccount"
-              />
+            <div v-for="(group, index) in userGroups" class="mb-3">
+              <div class="card">
+                <div class="card-header">
+                  <div class="d-flex justify-content-between">
+                    <div class="d-flex justify-content-between align-items-center">
+                      {{ group.group_name }}
+                    </div>
+                    <input
+                      class="btn btn-success btn-sm"
+                      type="button"
+                      value="選択"
+                      data-bs-toggle="modal"
+                      data-bs-target="#sendConfirmModal"
+                      @click="data.selectUserGroup = group"
+                    />
+                  </div>
+                </div>
+                <ul class="list-group list-group-flush">
+                  <li class="list-group-item" v-for="user in group.users">
+                    <div class="d-flex justify-content-between align-items-center">
+                      <div>
+                        {{ user.name }}
+                      </div>
+
+                      <!--                       
+                      <div v-for="lineAccount in lineAccounts">
+
               <span class="m-2">
-                <img
+                  <img
                   class="img-thumbnail rounded-circle"
                   :src="lineAccount.picture_url"
                   :alt="lineAccount.name + 'さんのLINEアイコン'"
@@ -37,8 +55,12 @@
                 />
               </span>
               <span class="fw-bold fs-5">
-                {{ lineAccount.name }}
-              </span>
+                        {{ lineAccount.name }}
+                      </span> -->
+                    </div>
+                  </li>
+                </ul>
+              </div>
             </div>
           </div>
           <div class="modal-footer">
@@ -67,8 +89,8 @@
             ></button>
           </div>
           <div class="modal-body">
-            <div v-if="data.selectLineAccount">
-              <p>{{ data.selectLineAccount.name }}さんにLINEメッセージを送信します。</p>
+            <div v-if="data.selectUserGroup">
+              <p>{{ data.selectUserGroup.group_name }}にLINEメッセージを送信します。</p>
             </div>
           </div>
           <div class="modal-footer">
@@ -84,7 +106,7 @@
               type="button"
               class="btn btn-success"
               data-bs-dismiss="modal"
-              @click="$emit('sendLine', data.selectLineAccount?.id)"
+              @click="$emit('sendLine', data.selectUserGroup?.id)"
             >
               送信
             </button>
@@ -96,18 +118,18 @@
 </template>
 
 <script setup lang="ts">
-import type { LineAccount } from '@/types';
+import type { IndexUserGroup, LineAccount, LineBot, User, UserGroup } from '@/types';
 import { reactive } from 'vue';
 import { Modal } from 'bootstrap';
 
 defineProps<{
-  lineAccounts: LineAccount[];
+  userGroups: IndexUserGroup['user_groups'];
 }>();
 
 const data = reactive<{
-  selectLineAccount: LineAccount | null;
+  selectUserGroup: IndexUserGroup['user_groups'][number] | null;
 }>({
-  selectLineAccount: null
+  selectUserGroup: null
 });
 
 const backToList = () => {
