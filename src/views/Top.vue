@@ -164,8 +164,8 @@ import type {
   IndexLineAccountResponse,
   LineAccount,
   IndexLineBot,
-  IndexUserGroup,
-  UserGroup
+  IndexSendGroup,
+  SendGroup
 } from '@/types';
 import StoreDetailModal from './modals/StoreDetailModal.vue';
 import SendLineMessageModal from './modals/SendLineMessageModal.vue';
@@ -290,13 +290,13 @@ const paginationNum = computed(() => {
   return pages;
 });
 
-const userGroups = ref<IndexUserGroup['user_groups']>([]);
+const userGroups = ref<IndexSendGroup['send_groups']>([]);
 const selectLineAccount = async () => {
-  const res = await customFetch<IndexUserGroup>('userGroups', 'get');
+  const res = await customFetch<IndexSendGroup>('userGroups', 'get');
 
   if (!res) return;
 
-  userGroups.value = res.user_groups;
+  userGroups.value = res.send_groups;
 
   new Modal('#sendLineMessageModal').show();
 };

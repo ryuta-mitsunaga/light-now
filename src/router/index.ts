@@ -2,7 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router';
 import Login from '../views/Login.vue';
 import SignUp from '../views/SignUp.vue';
 import Top from '../views/Top.vue';
-import UserGroups from '../views/UserGroups.vue';
+import SendGroups from '../views/SendGroups.vue';
 import LineBot from '../views/LineBot.vue';
 import MyPage from '../views/MyPage.vue';
 
@@ -27,7 +27,7 @@ const router = createRouter({
     {
       path: '/userGroups',
       name: 'userGroups',
-      component: UserGroups
+      component: SendGroups
     },
     {
       path: '/lineBot',

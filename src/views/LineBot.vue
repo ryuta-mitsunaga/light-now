@@ -41,7 +41,8 @@
         />
         <div class="m-2 d-flex align-items-center" style="height: 80px">
           <img
-            class="img-thumbnail rounded-circle"
+            v-if="lineBot.picture_url"
+            class="img-thumbnail rounded-circle p-0"
             :src="lineBot.picture_url"
             alt="LINEアイコン"
             style="width: 60px; height: 60px"
@@ -56,15 +57,6 @@
         </span>
       </div>
     </div>
-
-    <!-- <div v-for="(group, index) in groups">
-      <div class="border">
-        <div class="d-flex justify-content-between">
-          <p>{{ group.group_name }}</p>
-          <p>{{ group.users.length }}人</p>
-        </div>
-      </div>
-    </div> -->
   </div>
 </template>
 
@@ -83,6 +75,9 @@ const createLineBot = async () => {
   await customFetch('lineBot', 'post', JSON.stringify(data.value));
 
   indexLineBot();
+
+  data.value.lineChannelSecret = '';
+  data.value.lineChannelToken = '';
 };
 
 const lineBots = ref<LineBot[]>([]);

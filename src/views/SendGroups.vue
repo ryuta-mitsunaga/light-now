@@ -30,7 +30,12 @@
       <div class="card">
         <div class="card-header">
           <div class="d-flex justify-content-between align-items-center">
-            {{ group.group_name }}
+            <div class="d-flex">
+              {{ group.group_name }}
+              <div class="ms-1">
+                {{ lineBotFindById(group.line_bot_id)?.basic_id || '' }}
+              </div>
+            </div>
             <div>
               <span
                 @click="openConfirmModal(group)"
@@ -43,13 +48,11 @@
           </div>
         </div>
         <ul class="list-group list-group-flush">
-          <li class="list-group-item" v-for="user in group.users">
+          <li class="list-group-item" v-for="lineBotFriend in group.line_bot_friends">
             <div class="d-flex justify-content-between align-items-center">
-              <div>
-                {{ user.name }}
-              </div>
+              <div>{{ lineBotFriend.name }}さん</div>
               <button
-                @click="openDeleteUserGroupInGroupConfirmModal(user, group)"
+                @click="openDeleteSendGroupInGroupConfirmModal(lineBotFriend, group)"
                 data-bs-toggle="modal"
                 data-bs-target="#confirmModal"
                 class="btn btn-outline-danger btn-sm"
@@ -62,11 +65,11 @@
         <ul class="list-group list-group-flush">
           <li class="list-group-item">
             <button
-              @click="openAddUserGroupModal(group)"
+              @click="openAddSendGroupModal(group)"
               type="button"
               class="btn btn-outline-success btn-sm me-2"
               data-bs-toggle="modal"
-              data-bs-target="#addUserGroupModal"
+              data-bs-target="#addLineBotFriendGroupModal"
             >
               <i class="bi bi-person-add"></i>
             </button>
@@ -75,35 +78,41 @@
       </div>
     </div>
 
-    <AddUserGroupModal :user-group="data.selectingUserGroup" @added-user="getGroups" />
+    <AddLineBotFriendGroupModal :user-group="data.selectingSendGroup" @added-user="getGroups" />
     <ConfirmModal :message="confirmedMessage" confirmLabel="削除" @confirmed="confirmed" />
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, ref } from 'vue';
-import type { IndexUserGroup, CreateUserGroup, IndexLineBot, UserGroup, User } from '@/types';
-import router from '@/router';
-import AddUserGroupModal from './modals/AddUserGroupModal.vue';
+import type {
+  IndexSendGroup,
+  CreateSendGroup,
+  IndexLineBot,
+  SendGroup,
+  User,
+  LineBotFriend
+} from '@/types';
+import AddLineBotFriendGroupModal from './modals/AddLineBotFriendGroupModal.vue';
 import ConfirmModal from './modals/ConfirmModal.vue';
 import { customFetch } from '@/services/customFetch';
 
 const data = ref({
   groupName: '',
   lineBotId: 0,
-  selectingUserGroup: undefined as UserGroup | undefined,
-  selectingUser: undefined as User | undefined,
-  opeModalType: '' as 'addUserGroup' | 'deleteUserInGroup' | 'deleteUserGroup'
+  selectingSendGroup: undefined as SendGroup | undefined,
+  selectingLineBotFriend: undefined as LineBotFriend | undefined,
+  openModalType: '' as 'addSendGroup' | 'deleteUserInGroup' | 'deleteSendGroup'
 });
 
-const groups = ref<IndexUserGroup['user_groups']>([]);
+const groups = ref<IndexSendGroup['send_groups']>([]);
 
 const getGroups = async () => {
-  const res = await customFetch<IndexUserGroup>('userGroups', 'get');
+  const res = await customFetch<IndexSendGroup>('userGroups', 'get');
 
   if (!res) return;
 
-  groups.value = res.user_groups;
+  groups.value = res.send_groups;
 };
 getGroups();
 
@@ -129,35 +138,38 @@ const indexLineBot = async () => {
 };
 indexLineBot();
 
-const openAddUserGroupModal = (userGroup: UserGroup) => {
-  data.value.selectingUserGroup = userGroup;
-  data.value.opeModalType = 'addUserGroup';
+const openAddSendGroupModal = (userGroup: SendGroup) => {
+  data.value.selectingSendGroup = userGroup;
+  data.value.openModalType = 'addSendGroup';
 };
 
-const openConfirmModal = (userGroup: UserGroup) => {
-  data.value.selectingUserGroup = userGroup;
-  data.value.opeModalType = 'deleteUserGroup';
+const openConfirmModal = (userGroup: SendGroup) => {
+  data.value.selectingSendGroup = userGroup;
+  data.value.openModalType = 'deleteSendGroup';
 };
 
-const openDeleteUserGroupInGroupConfirmModal = (user: User, userGroup: UserGroup) => {
-  data.value.selectingUser = user;
-  data.value.selectingUserGroup = userGroup;
-  data.value.opeModalType = 'deleteUserInGroup';
+const openDeleteSendGroupInGroupConfirmModal = (
+  lineBotFriend: LineBotFriend,
+  userGroup: SendGroup
+) => {
+  data.value.selectingLineBotFriend = lineBotFriend;
+  data.value.selectingSendGroup = userGroup;
+  data.value.openModalType = 'deleteUserInGroup';
 };
 
-const deleteUserGroup = async () => {
-  if (!data.value.selectingUserGroup) return;
+const deleteSendGroup = async () => {
+  if (!data.value.selectingSendGroup) return;
 
-  await customFetch<IndexLineBot>(`userGroup/${data.value.selectingUserGroup.id}`, 'delete');
+  await customFetch<IndexLineBot>(`userGroup/${data.value.selectingSendGroup.id}`, 'delete');
 
   getGroups();
 };
 
-const deleteUserInGroup = async (user: User, userGroup: UserGroup) => {
-  if (!(data.value.selectingUserGroup && data.value.selectingUser)) return;
+const deleteUserInGroup = async (lineBotFriend: LineBotFriend) => {
+  if (!(data.value.selectingSendGroup && data.value.selectingLineBotFriend)) return;
 
   await customFetch<IndexLineBot>(
-    `userGroup/${data.value.selectingUserGroup.id}/user/${user.id}`,
+    `userGroup/${data.value.selectingSendGroup.id}/lineBotFriend/${lineBotFriend.id}`,
     'delete'
   );
 
@@ -165,28 +177,32 @@ const deleteUserInGroup = async (user: User, userGroup: UserGroup) => {
 };
 
 const confirmed = () => {
-  switch (data.value.opeModalType) {
-    case 'addUserGroup':
+  switch (data.value.openModalType) {
+    case 'addSendGroup':
       break;
-    case 'deleteUserGroup':
-      deleteUserGroup();
+    case 'deleteSendGroup':
+      deleteSendGroup();
       break;
     case 'deleteUserInGroup':
-      if (!(data.value.selectingUserGroup && data.value.selectingUser)) return;
+      if (!(data.value.selectingSendGroup && data.value.selectingLineBotFriend)) return;
 
-      deleteUserInGroup(data.value.selectingUser, data.value.selectingUserGroup);
+      deleteUserInGroup(data.value.selectingLineBotFriend);
       break;
   }
 };
 
 const confirmedMessage = computed(() => {
-  switch (data.value.opeModalType) {
-    case 'deleteUserGroup':
-      return `本当に${data.value.selectingUserGroup?.group_name}を削除しますか？`;
+  switch (data.value.openModalType) {
+    case 'deleteSendGroup':
+      return `本当に${data.value.selectingSendGroup?.group_name}を削除しますか？`;
     case 'deleteUserInGroup':
-      return `本当に${data.value.selectingUserGroup?.group_name}から${data.value.selectingUser?.name}さんを削除しますか？`;
+      return `本当に${data.value.selectingSendGroup?.group_name}から${data.value.selectingLineBotFriend?.name}さんを削除しますか？`;
   }
 });
+
+const lineBotFindById = (id: number) => {
+  return lineBots.value.find((lineBot) => lineBot.id === id);
+};
 </script>
 
 <style scoped>

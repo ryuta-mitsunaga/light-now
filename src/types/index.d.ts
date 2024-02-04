@@ -39,20 +39,19 @@ export interface IndexLineAccountResponse extends ResponseStatus {
   line_accounts: LineAccount[];
 }
 
-type UserGroup = {
+type SendGroup = {
   id: number;
   group_name: string;
-  line_bot_id: string;
+  line_bot_id: id;
+  line_bot_friends?: LineBotFriend[];
 };
 
-export interface IndexUserGroup extends ResponseStatus {
-  user_groups: (UserGroup & {
-    users: User[];
-  })[];
+export interface IndexSendGroup extends ResponseStatus {
+  send_groups: SendGroup[];
 }
 
-export interface CreateUserGroup extends ResponseStatus {
-  user_group: UserGroup;
+export interface CreateSendGroup extends ResponseStatus {
+  send_group: SendGroup;
 }
 
 type LineBot = {
@@ -83,4 +82,15 @@ export interface SearchUser extends ResponseStatus {
 
 export interface AddUser extends ResponseStatus {
   user: User;
+}
+
+export type LineBotFriend = {
+  id: number;
+  line_user_id: string;
+  picture_url: string;
+  name: string;
+};
+
+export interface IndexLineBotFriend extends ResponseStatus {
+  line_bot_friends: LineBotFriend[];
 }
