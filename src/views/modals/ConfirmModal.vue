@@ -47,7 +47,7 @@
 
 <script setup lang="ts">
 defineProps<{
-  message: string;
+  message: string | undefined;
   confirmLabel: string;
 }>();
 </script>
