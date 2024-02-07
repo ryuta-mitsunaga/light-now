@@ -17,7 +17,7 @@
 
   <div>
     <span class="fw-bold">LINE公式アカウントからユーザー登録</span><br />
-    <a href="https://lin.ee/jk9duP9"
+    <a :href="addLineUserHref"
       ><img
         src="https://scdn.line-apps.com/n/line_add_friends/btn/ja.png"
         alt="友だち追加"
@@ -30,7 +30,6 @@
 <script lang="ts" setup>
 import { inject, onMounted, reactive } from 'vue';
 import { useSelfUser } from '@/composables/useSelfUser';
-import { useGlobalAlert } from '@/composables/useGlobalAlert';
 
 const selfUserComposable = inject<ReturnType<typeof useSelfUser>>('selfUserComposable');
 
@@ -38,4 +37,6 @@ const data = reactive({
   email: '',
   password: ''
 });
+
+const addLineUserHref = import.meta.env.VITE_ADD_LINE_USER_HREF;
 </script>
