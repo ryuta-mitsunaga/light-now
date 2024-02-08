@@ -2,6 +2,7 @@
 
 #app {
   color: #495057;
+  touch-action: manipulation;
 }
 
 .btn-action {

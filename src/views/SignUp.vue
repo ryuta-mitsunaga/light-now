@@ -1,5 +1,5 @@
 <template>
-  <form>
+  <form @submit.prevent="signUp">
     <div class="mb-3">
       <label for="email" class="form-label">Email address</label>
       <input type="email" v-model="data.email" class="form-control" id="email" required />
@@ -31,7 +31,7 @@
       <input type="text" v-model="data.lineUserId" class="form-control" id="lineUserId" disabled />
     </div>
 
-    <button type="button" class="btn btn-success" @click="signUp">登録</button>
+    <button type="submit" class="btn btn-success">登録</button>
   </form>
 </template>
 
