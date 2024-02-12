@@ -19,13 +19,14 @@ const router = createRouter({
       name: 'signUp',
       component: SignUp
     },
+
     {
       path: '/',
       name: 'top',
       component: Top
     },
     {
-      path: '/userGroups',
+      path: '/user/:userId/userGroups',
       name: 'userGroups',
       component: SendGroups
     },
@@ -35,12 +36,12 @@ const router = createRouter({
       component: LineBot
     },
     {
-      path: '/myPage',
+      path: '/user/:userId/myPage',
       name: 'myPage',
       component: MyPage
     },
     {
-      path: '/user/:id/lineLink',
+      path: '/user/:userId/user/:id/lineLink',
       name: 'lineLink',
       component: SignUp
     }

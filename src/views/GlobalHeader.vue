@@ -34,13 +34,17 @@
                 <router-link class="nav-link active" to="/">TOP</router-link>
               </li>
               <li class="nav-item" data-bs-dismiss="offcanvas">
-                <router-link class="nav-link active" to="/myPage">マイページ</router-link>
+                <router-link class="nav-link active" :to="to('myPage')">マイページ</router-link>
               </li>
               <li class="nav-item" data-bs-dismiss="offcanvas">
-                <router-link class="nav-link active" to="/userGroups">送信グループ設定</router-link>
+                <router-link class="nav-link active" :to="to('userGroups')"
+                  >送信グループ設定</router-link
+                >
               </li>
               <li class="nav-item" data-bs-dismiss="offcanvas">
-                <router-link class="nav-link active" to="/lineBot">LINEボット設定</router-link>
+                <router-link class="nav-link active" :to="to('userGroups')"
+                  >LINEボット設定</router-link
+                >
               </li>
               <li class="nav-item" data-bs-dismiss="offcanvas">
                 <a class="nav-link active" aria-current="page" @click="logout">ログアウト</a>
@@ -68,6 +72,17 @@ const logout = () => {
 const isLoginPage = computed(() => {
   return route.path === '/login';
 });
+
+const to = (pathName: 'myPage' | 'userGroups' | 'lineBot') => {
+  switch (pathName) {
+    case 'myPage':
+      return `/user/${selfUser.state.value?.id}/myPage`;
+    case 'userGroups':
+      return `/user/${selfUser.state.value?.id}/userGroups`;
+    case 'lineBot':
+      return `/user/${selfUser.state.value?.id}/lineBot`;
+  }
+};
 </script>
 
 <style>
