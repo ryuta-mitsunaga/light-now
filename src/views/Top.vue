@@ -150,6 +150,13 @@
       </nav>
     </div>
 
+    <div>
+      <h3>チャット</h3>
+      <div>
+        <button @click="sendChat" class="btn">チャット開始</button>
+      </div>
+    </div>
+
     <StoreDetailModal :store="data.selectingStore" @interest="interest" />
     <SendLineMessageModal :user-groups="userGroups" @sendLine="sendLine" />
   </div>
@@ -172,8 +179,7 @@ import SendLineMessageModal from './modals/SendLineMessageModal.vue';
 import { Modal } from 'bootstrap';
 import router from '@/router';
 import { customFetch } from '@/services/customFetch';
-
-const selfUserComposable = inject<ReturnType<typeof useSelfUser>>('selfUserComposable');
+import ActionCable from 'actioncable';
 
 const data = reactive<{
   selectingStore: Store | null;
@@ -318,6 +324,23 @@ watch(
     getStores();
   }
 );
+
+const cable = ActionCable.createConsumer('ws://localhost:3000/cable');
+const chatChannel = cable.subscriptions.create('ChatChannel', {
+  connected() {
+    console.log('connected');
+  },
+  disconnected() {
+    console.log('disconnected');
+  },
+  received(data) {
+    console.log(data);
+  }
+});
+
+const sendChat = () => {
+  chatChannel.perform('send_message', { message: 'hello' });
+};
 </script>
 
 <style scoped lang="scss">
