@@ -18,13 +18,17 @@ const props = defineProps<{
   cellIndex: { left: number; right: number };
   initialPosition: number;
   isAvailable: boolean;
+  fromBestMove: boolean;
+  toBestMove: boolean;
 }>();
 
 const { pieceInfo, setState, confirmPromote, promote, data } = useShogi(props.initialPosition);
 
 const classes = computed(() => {
   return {
-    'bg-primary': props.isAvailable
+    'bg-primary': props.isAvailable,
+    'bg-warning': props.fromBestMove,
+    'bg-success': props.toBestMove
   };
 });
 

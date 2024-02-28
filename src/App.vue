@@ -20,6 +20,8 @@ import router from './router';
 
 const selfUserComposable = useSelfUser();
 
+selfUserComposable.getUser();
+
 provide('selfUserComposable', selfUserComposable);
 </script>
 

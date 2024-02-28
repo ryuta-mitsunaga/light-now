@@ -18,6 +18,4 @@ import type { useSelfUser } from '@/composables/useSelfUser';
 import { inject } from 'vue';
 
 const selfUser = inject('selfUserComposable') as ReturnType<typeof useSelfUser>;
-
-selfUser.getUser();
 </script>

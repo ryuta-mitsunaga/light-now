@@ -9,7 +9,16 @@ const frontRight = { dx: -1, dy: -1 };
 const rearLeft = { dx: 1, dy: 1 };
 const rearRight = { dx: -1, dy: 1 };
 
-export const singleMoves = [forward, right, rear, left, frontLeft, frontRight, rearLeft, rearRight];
+export const singleMoves = {
+  forward,
+  right,
+  rear,
+  left,
+  frontLeft,
+  frontRight,
+  rearLeft,
+  rearRight
+};
 
 export type CellIndex = { left: number; right: number };
 
@@ -217,134 +226,113 @@ const isAvailableDrop = (
 ) => {
   // ２歩の判定
   const isNotDuplicatePawn = () => {
+    if (dropPieceInfo.piece !== 'pawn') return true;
+
+    // 同じ筋に歩があるかどうか
     return !currentCellIndexWithPieceInfoList.some(
       (currentCellIndexWithPieceInfo) =>
         currentCellIndexWithPieceInfo.left === dropToCellIndex.left &&
-        currentCellIndexWithPieceInfo.piece === 'pawn'
+        currentCellIndexWithPieceInfo.piece === 'pawn' &&
+        currentCellIndexWithPieceInfo.isBlack === dropPieceInfo.isBlack
     );
   };
 
   // 次のターン移動できるかどうか
   const isMoveNextTurn = () => {
-    return singleMoves.some((move) => {
+    const rule = getPieceRule(dropPieceInfo);
+
+    if (!rule) return false;
+
+    let result = false;
+
+    const isOverCell = (cellIndex: CellIndex) => {
+      return cellIndex.left > 9 || cellIndex.left < 1 || cellIndex.right > 9 || cellIndex.right < 1;
+    };
+
+    // 相手の駒が存在する場合
+    const existsOpponentPiece = (
+      currentCellIndexWithPieceInfo: (typeof currentCellIndexWithPieceInfoList)[number],
+      nextCellIndex: CellIndex
+    ) => {
+      return (
+        currentCellIndexWithPieceInfo.left === nextCellIndex.left &&
+        currentCellIndexWithPieceInfo.right === nextCellIndex.right &&
+        currentCellIndexWithPieceInfo.isBlack !== dropPieceInfo.isBlack
+      );
+    };
+
+    // 駒が存在しないかどうか
+    const existsPiece = (
+      currentCellIndexWithPieceInfo: (typeof currentCellIndexWithPieceInfoList)[number],
+      nextCellIndex: CellIndex
+    ) => {
+      return (
+        currentCellIndexWithPieceInfo.left === nextCellIndex.left &&
+        currentCellIndexWithPieceInfo.right === nextCellIndex.right &&
+        !currentCellIndexWithPieceInfo.piece
+      );
+    };
+
+    if (['rook', 'bishop', 'lance'].includes(dropPieceInfo.piece)) {
+      Object.keys(rule.moves).forEach((key) => {
+        if (result) return;
+
+        const move = rule.moves[key as keyof Moves];
+
+        if (!move) return;
+        const singleMove = singleMoves[key as keyof typeof singleMoves];
+
+        let i = 1;
+
+        while (i < 9) {
+          if (result || (i === 2 && !result)) break;
+
+          const nextCellIndex = {
+            left: dropToCellIndex.left + (dropPieceInfo.isBlack ? singleMove.dx : -singleMove.dx),
+            right: dropToCellIndex.right + (dropPieceInfo.isBlack ? singleMove.dy : -singleMove.dy)
+          };
+
+          if (isOverCell(nextCellIndex)) {
+            break;
+          }
+
+          result = currentCellIndexWithPieceInfoList.some(
+            (currentCellIndexWithPieceInfo) =>
+              existsOpponentPiece(currentCellIndexWithPieceInfo, nextCellIndex) ||
+              existsPiece(currentCellIndexWithPieceInfo, nextCellIndex)
+          );
+
+          i++;
+        }
+      });
+
+      return result;
+    }
+
+    Object.keys(rule.moves).forEach((key) => {
+      if (result) return;
+
+      const move = rule.moves[key as keyof Moves];
+
+      if (!move) return;
+
       const nextCellIndex = {
         left: dropToCellIndex.left + move.dx,
         right: dropToCellIndex.right + move.dy
       };
 
-      if (dropPieceInfo.piece === 'rook') {
-        // 飛車の場合
-        // 前後左右９マス確認し移動できるかどうか
-        if (move === forward || move === rear || move === left || move === right) {
-          let i = 1;
-
-          while (i < 9) {
-            const nextCellIndex = {
-              left: dropToCellIndex.left + move.dx * i,
-              right: dropToCellIndex.right + move.dy * i
-            };
-
-            if (
-              !currentCellIndexWithPieceInfoList.some(
-                (currentCellIndexWithPieceInfo) =>
-                  currentCellIndexWithPieceInfo.left === nextCellIndex.left &&
-                  currentCellIndexWithPieceInfo.right === nextCellIndex.right
-              )
-            ) {
-              return true;
-            }
-
-            i++;
-          }
-
-          // 移動できるマスがない場合
-          return false;
-        }
+      if (isOverCell(nextCellIndex)) {
+        return (result = false);
       }
 
-      if (dropPieceInfo.piece === 'bishop') {
-        // 角の場合
-        // 右前、左前、右後、左後の４マス確認し移動できるかどうか
-        let i = 1;
-        if (move === frontLeft || move === frontRight || move === rearLeft || move === rearRight) {
-          while (i < 9) {
-            const nextCellIndex = {
-              left: dropToCellIndex.left + move.dx * i,
-              right: dropToCellIndex.right + move.dy * i
-            };
-
-            if (
-              !currentCellIndexWithPieceInfoList.some(
-                (currentCellIndexWithPieceInfo) =>
-                  currentCellIndexWithPieceInfo.left === nextCellIndex.left &&
-                  currentCellIndexWithPieceInfo.right === nextCellIndex.right
-              )
-            ) {
-              return true;
-            }
-
-            i++;
-          }
-
-          // 移動できるマスがない場合
-          return false;
-        }
-      }
-
-      if (dropPieceInfo.piece === 'lance') {
-        // 香車の場合
-        // 前方のマス確認し移動できるかどうか
-        if (move === forward) {
-          let i = 1;
-
-          while (i < 9) {
-            const nextCellIndex = {
-              left: dropToCellIndex.left + move.dx * i,
-              right: dropToCellIndex.right + move.dy * i
-            };
-
-            if (
-              !currentCellIndexWithPieceInfoList.some(
-                (currentCellIndexWithPieceInfo) =>
-                  currentCellIndexWithPieceInfo.left === nextCellIndex.left &&
-                  currentCellIndexWithPieceInfo.right === nextCellIndex.right
-              )
-            ) {
-              return true;
-            }
-
-            i++;
-          }
-
-          // 移動できるマスがない場合
-          return false;
-        }
-      }
-
-      if (dropPieceInfo.piece === 'knight') {
-        // 桂馬の場合
-        // 右前、左前の２マス確認し移動できるかどうか
-        if (move === frontLeft || move === frontRight) {
-          const nextCellIndex = {
-            left: move === frontLeft ? dropToCellIndex.left + 1 : dropToCellIndex.left - 1,
-            right: dropToCellIndex.right + (dropPieceInfo.isBlack ? 1 : -1)
-          };
-
-          return !currentCellIndexWithPieceInfoList.some(
-            (currentCellIndexWithPieceInfo) =>
-              currentCellIndexWithPieceInfo.left === nextCellIndex.left &&
-              currentCellIndexWithPieceInfo.right === nextCellIndex.right
-          );
-        }
-      }
-
-      // それ以外の駒の場合
-      return !currentCellIndexWithPieceInfoList.some(
+      result = currentCellIndexWithPieceInfoList.some(
         (currentCellIndexWithPieceInfo) =>
-          currentCellIndexWithPieceInfo.left === nextCellIndex.left &&
-          currentCellIndexWithPieceInfo.right === nextCellIndex.right
+          existsOpponentPiece(currentCellIndexWithPieceInfo, nextCellIndex) ||
+          existsPiece(currentCellIndexWithPieceInfo, nextCellIndex)
       );
     });
+
+    return result;
   };
 
   // // 打ち歩詰めの判定

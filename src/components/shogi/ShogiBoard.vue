@@ -1,13 +1,29 @@
 <template>
   <div class="d-flex flex-column shogi-board-outer">
-    <ShogiGetPieceArea is-black :pieces="data.havingPiece.black" @select-piece="selectPiece" />
+    <div class="d-flex align-items-end justify-content-between">
+      <ShogiGetPieceArea is-black :pieces="data.havingPiece.black" @select-piece="selectPiece" />
+      <div
+        class="bg-info rounded d-flex align-items-center justify-content-center text-white fw-bold"
+        style="width: 100px; height: 50px"
+      >
+        {{ data.currentTurn === 'white' ? '先手' : '後手' }}
+      </div>
+    </div>
     <div class="py-2 align-self-center">
       <div class="board-outline">
         <ShogiCell
           class="cell"
           v-for="(cellIndex, i) in currentCellIndexes"
+          :key="i"
           :cell-index="cellIndex"
           :initial-position="i + 1"
+          :from-best-move="
+            data.bestMove?.from.left === cellIndex.left &&
+            data.bestMove?.from.right === cellIndex.right
+          "
+          :to-best-move="
+            data.bestMove?.to.left === cellIndex.left && data.bestMove?.to.right === cellIndex.right
+          "
           @select="selectPiece($event, cellIndex)"
           :is-available="isAvailable(cellIndex)"
           ref="shogiCellRefs"
@@ -21,11 +37,16 @@
         @confirmed="data.confirmingPromoteCellRef?.promote"
       />
     </div>
-    <ShogiGetPieceArea
-      :pieces="data.havingPiece.white"
-      class="align-self-end"
-      @select-piece="selectPiece"
-    />
+    <div class="d-flex justify-content-between align-items-end">
+      <div>
+        <button class="btn btn-warning" @click="getSfen">最善手</button>
+      </div>
+      <ShogiGetPieceArea
+        :pieces="data.havingPiece.white"
+        class="align-self-end"
+        @select-piece="selectPiece"
+      />
+    </div>
   </div>
 </template>
 
@@ -43,8 +64,11 @@ import {
 import ConfirmModal from '@/views/modals/ConfirmModal.vue';
 import ShogiGetPieceArea from './ShogiGetPieceArea.vue';
 import { ref } from 'vue';
+import { useGikou } from '@/composables/useGikou';
 
 const shogiCellRefs = ref<InstanceType<typeof ShogiCell>[]>([]);
+
+const gikouComposable = useGikou();
 
 const data = ref<{
   availableRangeCells: CellIndex[];
@@ -55,6 +79,9 @@ const data = ref<{
     black: PieceInfo[];
     white: PieceInfo[];
   };
+  currentCellIndexWithPieceInfoList: (CellIndex & PieceInfo)[];
+  currentTurn: 'black' | 'white';
+  bestMove: { from: CellIndex; to: CellIndex } | undefined;
 }>({
   availableRangeCells: [],
   selectingPiece: undefined,
@@ -62,7 +89,10 @@ const data = ref<{
   havingPiece: {
     black: [],
     white: []
-  }
+  },
+  currentCellIndexWithPieceInfoList: [],
+  currentTurn: 'white',
+  bestMove: undefined
 });
 
 const currentCellIndexes = ref<CellIndex[]>([]);
@@ -106,10 +136,40 @@ const getUnavailableCells = () => {
   return unavailableCells;
 };
 
+const getSfen = async () => {
+  setCurrentCellIndexWithPieceInfoList();
+
+  data.value.bestMove = await gikouComposable.getBestMove(
+    data.value.currentCellIndexWithPieceInfoList,
+    data.value.havingPiece,
+    data.value.currentTurn
+  );
+};
+
 const selectPiece = (pieceInfo: PieceInfo, cellIndex?: CellIndex) => {
+  const isMatchSelectingPiece =
+    data.value.selectingPiece?.pieceInfo.piece === pieceInfo.piece &&
+    data.value.selectingPiece?.pieceInfo.isBlack === pieceInfo.isBlack &&
+    data.value.selectingPiece?.cellIndex?.left === cellIndex?.left &&
+    data.value.selectingPiece?.cellIndex?.right === cellIndex?.right;
+
+  // 選択の駒を選択した場合
+  if (isMatchSelectingPiece) {
+    data.value.selectingPiece = undefined;
+    clearAvailableRangeCells();
+    return;
+  }
+
   // 持ち駒を選択時
   if (!cellIndex || (data.value.selectingPiece && !data.value.selectingPiece.cellIndex)) {
     if (data.value.selectingPiece) {
+      // 選択中の駒を選択した場合
+      if (data.value.selectingPiece.pieceInfo.piece === pieceInfo.piece) {
+        data.value.selectingPiece = undefined;
+        clearAvailableRangeCells();
+        return;
+      }
+
       // 打った場合
       clearAvailableRangeCells();
 
@@ -213,7 +273,9 @@ const selectPiece = (pieceInfo: PieceInfo, cellIndex?: CellIndex) => {
     }
 
     let isUnavailable = false;
-    singleMoves.forEach((move) => {
+    Object.keys(singleMoves).forEach((key) => {
+      const move = singleMoves[key as keyof typeof singleMoves];
+
       isUnavailable = false;
 
       if (pieceInfo.isBlack) {
@@ -258,6 +320,7 @@ const selectPiece = (pieceInfo: PieceInfo, cellIndex?: CellIndex) => {
 
 const clearAvailableRangeCells = () => {
   data.value.availableRangeCells = [];
+  data.value.bestMove = undefined;
 };
 
 const setAvailableRangeCells = (
@@ -403,20 +466,28 @@ const isAvailable = (cellIndex: CellIndex) => {
   });
 };
 
+const setCurrentCellIndexWithPieceInfoList = () => {
+  data.value.currentCellIndexWithPieceInfoList = shogiCellRefs.value.map((cell) => {
+    return {
+      left: cell.$props.cellIndex.left,
+      right: cell.$props.cellIndex.right,
+      piece: cell.pieceInfo.piece,
+      isBlack: cell.pieceInfo.isBlack
+    };
+  });
+};
+
+const setTurn = () => {
+  data.value.currentTurn = data.value.currentTurn === 'black' ? 'white' : 'black';
+};
+
 const movePiece = (cellIndex: { right: number; left: number }) => {
   // 持ち駒を打った場合
   if (data.value.selectingPiece && !data.value.selectingPiece.cellIndex) {
-    const currentCellIndexWithPieceInfoList = shogiCellRefs.value.map((cell) => {
-      return {
-        left: cell.$props.cellIndex.left,
-        right: cell.$props.cellIndex.right,
-        piece: cell.pieceInfo.piece,
-        isBlack: cell.pieceInfo.isBlack
-      };
-    });
+    setCurrentCellIndexWithPieceInfoList();
 
     const isAvailableDropResult = isAvailableDrop(
-      currentCellIndexWithPieceInfoList,
+      data.value.currentCellIndexWithPieceInfoList,
       data.value.selectingPiece.pieceInfo as NonNullable<
         PieceInfo & { piece: Exclude<MovePiece, 'king' | 'king2'> }
       >,
@@ -424,6 +495,8 @@ const movePiece = (cellIndex: { right: number; left: number }) => {
     );
 
     if (!isAvailableDropResult) return;
+
+    setTurn();
 
     shogiCellRefs.value.some((cell) => {
       if (
@@ -440,11 +513,20 @@ const movePiece = (cellIndex: { right: number; left: number }) => {
       }
     });
 
-    data.value.havingPiece[data.value.selectingPiece?.pieceInfo.isBlack ? 'black' : 'white'] =
+    // 持ち駒から打った駒を１枚削除
+    const removeIndex = data.value.havingPiece[
+      data.value.selectingPiece?.pieceInfo.isBlack ? 'black' : 'white'
+    ].findIndex(
+      (piece) =>
+        piece.piece === data.value.selectingPiece?.pieceInfo.piece &&
+        piece.isBlack === data.value.selectingPiece?.pieceInfo.isBlack
+    );
+
+    if (removeIndex !== -1) {
       data.value.havingPiece[
         data.value.selectingPiece?.pieceInfo.isBlack ? 'black' : 'white'
-      ].filter((piece) => piece.piece !== data.value.selectingPiece?.pieceInfo.piece);
-    return;
+      ].splice(removeIndex, 1);
+    }
   }
 
   const availableCell = data.value.availableRangeCells.find(
@@ -455,6 +537,8 @@ const movePiece = (cellIndex: { right: number; left: number }) => {
   const selectingPiece = data.value.selectingPiece;
 
   if (!availableCell || !selectingPiece || !selectingPiece.pieceInfo.piece) return;
+
+  setTurn();
 
   shogiCellRefs.value.forEach((cell) => {
     if (

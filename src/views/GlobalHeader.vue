@@ -46,6 +46,13 @@
                   >LINEボット設定</router-link
                 >
               </li>
+              <li
+                v-if="selfUser.state.value && selfUser.state.value.id === 1"
+                class="nav-item"
+                data-bs-dismiss="offcanvas"
+              >
+                <router-link class="nav-link active" :to="to('shogi')">将棋</router-link>
+              </li>
               <li class="nav-item" data-bs-dismiss="offcanvas">
                 <a class="nav-link active" aria-current="page" @click="logout">ログアウト</a>
               </li>
@@ -73,7 +80,7 @@ const isLoginPage = computed(() => {
   return route.path === '/login';
 });
 
-const to = (pathName: 'myPage' | 'userGroups' | 'lineBot') => {
+const to = (pathName: 'myPage' | 'userGroups' | 'lineBot' | 'shogi') => {
   switch (pathName) {
     case 'myPage':
       return `/user/${selfUser.state.value?.id}/myPage`;
@@ -81,6 +88,8 @@ const to = (pathName: 'myPage' | 'userGroups' | 'lineBot') => {
       return `/user/${selfUser.state.value?.id}/userGroups`;
     case 'lineBot':
       return `/user/${selfUser.state.value?.id}/lineBot`;
+    case 'shogi':
+      return `/user/${selfUser.state.value?.id}/shogi`;
   }
 };
 </script>
