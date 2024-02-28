@@ -65,6 +65,8 @@ import ConfirmModal from '@/views/modals/ConfirmModal.vue';
 import ShogiGetPieceArea from './ShogiGetPieceArea.vue';
 import { ref } from 'vue';
 import { useGikou } from '@/composables/useGikou';
+import { customFetch } from '@/services/customFetch';
+import { generateSfen, convertToCellsFromSfen } from '@/services/shogi/boardToSfen';
 
 const shogiCellRefs = ref<InstanceType<typeof ShogiCell>[]>([]);
 
@@ -481,6 +483,29 @@ const setTurn = () => {
   data.value.currentTurn = data.value.currentTurn === 'black' ? 'white' : 'black';
 };
 
+/** 盤上の状況をsfen形式で保存する */
+const addSfenLog = () => {
+  const sfen = generateSfen(
+    data.value.currentCellIndexWithPieceInfoList,
+    data.value.havingPiece,
+    data.value.currentTurn
+  );
+
+  customFetch(`/shogi/room/1/log`, 'post', JSON.stringify({ sfen }));
+};
+
+const getLatestLog = () => {
+  customFetch(`/shogi/room/1/log/1/latest`, 'get').then((res) => {
+    if (!res) return;
+
+    const sfen = res.data.sfen;
+
+    console.log(convertToCellsFromSfen(sfen));
+  });
+};
+
+getLatestLog();
+
 const movePiece = (cellIndex: { right: number; left: number }) => {
   // 持ち駒を打った場合
   if (data.value.selectingPiece && !data.value.selectingPiece.cellIndex) {
@@ -497,6 +522,7 @@ const movePiece = (cellIndex: { right: number; left: number }) => {
     if (!isAvailableDropResult) return;
 
     setTurn();
+    addSfenLog();
 
     shogiCellRefs.value.some((cell) => {
       if (
@@ -539,6 +565,8 @@ const movePiece = (cellIndex: { right: number; left: number }) => {
   if (!availableCell || !selectingPiece || !selectingPiece.pieceInfo.piece) return;
 
   setTurn();
+  setCurrentCellIndexWithPieceInfoList();
+  addSfenLog();
 
   shogiCellRefs.value.forEach((cell) => {
     if (

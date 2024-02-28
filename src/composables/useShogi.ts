@@ -1,3 +1,4 @@
+import { customFetch } from '@/services/customFetch';
 import { isPromote, type CellIndex } from '@/services/shogi/pieceRules';
 import { Modal } from 'bootstrap';
 import { computed, ref, type Ref } from 'vue';

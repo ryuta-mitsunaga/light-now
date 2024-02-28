@@ -22,32 +22,6 @@ const sfenPieceMap: { [key in Piece]: string } = {
 
 export type Board = (PieceInfo | undefined)[][];
 
-// 盤上のデータからSFEN形式の駒の配置を生成
-function boardToSfen(board: BoardArray): string {
-  let sfen = '';
-  for (const row of board) {
-    let emptyCount = 0;
-    for (const cell of row) {
-      if (!cell || cell.piece === undefined) {
-        emptyCount++;
-      } else {
-        if (emptyCount > 0) {
-          sfen += emptyCount.toString();
-          emptyCount = 0;
-        }
-        const pieceChar = sfenPieceMap[cell.piece];
-        sfen += cell.isBlack ? pieceChar.toLowerCase() : pieceChar; // 後手の駒は小文字
-      }
-    }
-    if (emptyCount > 0) {
-      sfen += emptyCount;
-    }
-    sfen += '/';
-  }
-  sfen = sfen.slice(0, -1); // 最後のスラッシュを取り除く
-  return sfen;
-}
-
 // 持ち駒をSFEN形式で表記
 function handPiecesToSfen(havingPiece: { black: PieceInfo[]; white: PieceInfo[] }): string {
   const pieceCounts = (pieces: PieceInfo[]): { [key: string]: number } => {
@@ -73,26 +47,6 @@ function handPiecesToSfen(havingPiece: { black: PieceInfo[]; white: PieceInfo[] 
   if (blackPieces.length === 0 && whitePieces.length === 0) return '-';
 
   return `${blackPieces.toLowerCase()}${whitePieces}`;
-}
-
-// 9x9の盤面を初期化
-function initializeBoard(): BoardArray {
-  return Array(9)
-    .fill(null)
-    .map(() => Array(9).fill(null));
-}
-
-// currentCellIndexWithPieceInfoListから盤面を構築
-function buildBoardFromList(list: (CellIndex & PieceInfo)[]): BoardArray {
-  const board = initializeBoard();
-  list.forEach(({ left, right, piece, isBlack }) => {
-    if (piece) {
-      const row = 9 - left; // 1-indexed to 0-indexed
-      const col = right - 1; // 1-indexed to 0-indexed
-      board[row][col] = { piece, isBlack };
-    }
-  });
-  return board;
 }
 
 // 盤面、持ち駒、手番からSFENを生成
@@ -139,8 +93,6 @@ const generateSfen = (
     }
   };
 
-  console.log('boardForSfen', boardForSfen);
-
   Object.keys(boardForSfen).forEach((key) => {
     const rowNum = Number(key);
 
@@ -177,4 +129,53 @@ const generateSfen = (
   return sfen.toString();
 };
 
-export { generateSfen };
+const convertToCellsFromSfen = (sfen: string): (CellIndex & PieceInfo)[] => {
+  const cells: (CellIndex & PieceInfo)[] = [];
+
+  // sfen の文字を削除
+  sfen = sfen.replace(/sfen /, '');
+
+  const splittedSfen = sfen.split(' ')[0].split('/');
+
+  splittedSfen.forEach((row, i) => {
+    let right = 1;
+    row
+      .replace(/\//g, '')
+      .split('')
+      .forEach((cell) => {
+        // 数字の文字列の場合はその数だけ空のマスを追加
+        const toNumberCell = Number(cell);
+
+        if (toNumberCell) {
+          for (let j = 0; j < toNumberCell; j++) {
+            cells.push({
+              left: 9 - right + 1,
+              right: i + 1,
+              piece: undefined,
+              isBlack: false
+            });
+            right++;
+          }
+
+          return;
+        }
+
+        // cellが数字でない場合は駒を追加
+        // 小文字の場合は後手の駒
+        cells.push({
+          left: 9 - right + 1,
+          right: i + 1,
+          piece: Object.keys(sfenPieceMap).find((key) => {
+            return sfenPieceMap[key as Piece] === cell.toUpperCase();
+          }) as Piece,
+          isBlack: cell === cell.toLowerCase()
+        });
+
+        right++;
+      });
+  });
+
+  return cells;
+};
+
+export { generateSfen, convertToCellsFromSfen };
