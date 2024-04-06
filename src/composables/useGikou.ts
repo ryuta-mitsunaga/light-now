@@ -57,7 +57,7 @@ export const useGikou = () => {
 
   const getBestMove = async (
     currentCellIndexWithPieceInfoList: (CellIndex & PieceInfo)[],
-    havingPiece: { black: []; white: [] },
+    havingPiece: { black: PieceInfo[]; white: PieceInfo[] },
     turn: 'black' | 'white'
   ): Promise<{ from: CellIndex; to: CellIndex }> => {
     const sfen = generateSfen(currentCellIndexWithPieceInfoList, havingPiece, turn);
