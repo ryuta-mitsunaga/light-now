@@ -20,7 +20,6 @@ export const useGikou = () => {
 
     // 最善手の文字列を解析
     const [fromX, fromY, toX, toY] = bestMove.split('');
-    console.log(fromX, fromY, toX, toY);
     const fromRight = fileMap[fromY]; // '7g'の'g'など
     const fromLeft = parseInt(fromX, 10);
     const toRight = fileMap[toY]; // '7f'の'f'など
@@ -63,8 +62,6 @@ export const useGikou = () => {
   ): Promise<{ from: CellIndex; to: CellIndex }> => {
     const sfen = generateSfen(currentCellIndexWithPieceInfoList, havingPiece, turn);
 
-    console.log(sfen);
-
     const params = new URLSearchParams();
     params.append('position', sfen);
     params.append('byoyomi', '10000');
@@ -78,8 +75,6 @@ export const useGikou = () => {
     });
 
     const resToJson = await res.json();
-
-    console.log(resToJson);
 
     return convertBestMoveToCoordinates(resToJson.bestmove);
   };

@@ -4,7 +4,7 @@
       <GlobalHeader />
     </header>
     <div class="px-3 py-2">
-      <div id="globalAlert"></div>
+      <div id="globalAlert" />
       <RouterView />
     </div>
   </div>

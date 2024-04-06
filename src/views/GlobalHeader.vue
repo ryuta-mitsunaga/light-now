@@ -46,11 +46,7 @@
                   >LINEボット設定</router-link
                 >
               </li>
-              <li
-                v-if="selfUser.state.value && selfUser.state.value.id === 1"
-                class="nav-item"
-                data-bs-dismiss="offcanvas"
-              >
+              <li class="nav-item" data-bs-dismiss="offcanvas">
                 <router-link class="nav-link active" :to="to('shogi')">将棋</router-link>
               </li>
               <li class="nav-item" data-bs-dismiss="offcanvas">
@@ -89,7 +85,7 @@ const to = (pathName: 'myPage' | 'userGroups' | 'lineBot' | 'shogi') => {
     case 'lineBot':
       return `/user/${selfUser.state.value?.id}/lineBot`;
     case 'shogi':
-      return `/user/${selfUser.state.value?.id}/shogi`;
+      return `/shogi/rooms`;
   }
 };
 </script>

@@ -2,11 +2,14 @@
   <div class="d-flex flex-column shogi-board-outer">
     <div class="d-flex align-items-end justify-content-between">
       <ShogiGetPieceArea is-black :pieces="data.havingPiece.black" @select-piece="selectPiece" />
-      <div
-        class="bg-info rounded d-flex align-items-center justify-content-center text-white fw-bold"
-        style="width: 100px; height: 50px"
-      >
-        {{ data.currentTurn === 'white' ? '先手' : '後手' }}
+      <div class="text-end">
+        <input type="button" class="btn btn-danger" value="退出" @click="leaveRoom" />
+        <div
+          class="bg-info rounded d-flex align-items-center justify-content-center text-white fw-bold mt-1"
+          style="width: 100px; height: 50px"
+        >
+          {{ data.currentTurn === 'white' ? '先手' : '後手' }}
+        </div>
       </div>
     </div>
     <div class="py-2 align-self-center">
@@ -31,11 +34,7 @@
         />
       </div>
 
-      <ConfirmModal
-        message="成りますか"
-        confirmLabel="はい"
-        @confirmed="data.confirmingPromoteCellRef?.promote"
-      />
+      <ConfirmModal message="成りますか" confirmLabel="はい" @confirmed="promote" />
     </div>
     <div class="d-flex justify-content-between align-items-end">
       <div>
@@ -63,13 +62,16 @@ import {
 } from '@/services/shogi/pieceRules';
 import ConfirmModal from '@/views/modals/ConfirmModal.vue';
 import ShogiGetPieceArea from './ShogiGetPieceArea.vue';
-import { ref } from 'vue';
+import { computed, inject, nextTick, onUnmounted, ref } from 'vue';
 import { useGikou } from '@/composables/useGikou';
 import { customFetch } from '@/services/customFetch';
-import { generateSfen, convertToCellsFromSfen } from '@/services/shogi/boardToSfen';
+import { generateSfen, convertToCellsFromSfen, reverseSfen } from '@/services/shogi/boardToSfen';
+import router from '@/router';
+import { useActionCable } from '@/composables/useActionCable';
+import type { useSelfUser } from '@/composables/useSelfUser';
 
 const shogiCellRefs = ref<InstanceType<typeof ShogiCell>[]>([]);
-
+const selfUser = inject<ReturnType<typeof useSelfUser>>('selfUserComposable');
 const gikouComposable = useGikou();
 
 const data = ref<{
@@ -479,7 +481,11 @@ const setCurrentCellIndexWithPieceInfoList = () => {
   });
 };
 
-const setTurn = () => {
+const roomId = computed(() => router.currentRoute.value.params.roomId as unknown as number);
+
+const setTurn = (turn?: 'black' | 'white') => {
+  if (turn) return (data.value.currentTurn = turn);
+
   data.value.currentTurn = data.value.currentTurn === 'black' ? 'white' : 'black';
 };
 
@@ -490,21 +496,64 @@ const addSfenLog = () => {
     data.value.havingPiece,
     data.value.currentTurn
   );
+  console.log(`/shogi/room/${roomId.value}/log`);
+  customFetch(`/shogi/room/${roomId.value}/log`, 'post', JSON.stringify({ sfen }));
+};
 
-  customFetch(`/shogi/room/1/log`, 'post', JSON.stringify({ sfen }));
+const setBoard = (sfen: string) => {
+  const { cells, turn, havingPiece } = convertToCellsFromSfen(sfen);
+
+  setTurn(turn);
+  data.value.havingPiece = havingPiece;
+
+  cells.forEach((cell) => {
+    shogiCellRefs.value.some((shogiCell) => {
+      if (
+        shogiCell.$props.cellIndex.left === cell.left &&
+        shogiCell.$props.cellIndex.right === cell.right
+      ) {
+        shogiCell.setState(cell.piece, cell.isBlack);
+        return true;
+      }
+    });
+  });
 };
 
 const getLatestLog = () => {
-  customFetch(`/shogi/room/1/log/1/latest`, 'get').then((res) => {
+  customFetch(`/shogi/room/${roomId.value}/log/latest`, 'get').then((res) => {
     if (!res) return;
 
-    const sfen = res.data.sfen;
+    const sfen = (res as { data: { sfen: string } }).data?.sfen;
 
-    console.log(convertToCellsFromSfen(sfen));
+    if (!sfen) return;
+
+    setBoard(sfen);
   });
 };
 
 getLatestLog();
+
+type ReceiveData = { sfen: string; userId: number };
+
+const connectCallable = {
+  connected: () => {
+    console.log('connected');
+  },
+  disconnected: () => {
+    console.log('disconnected');
+  },
+  received: (data: ReceiveData) => {
+    if (data.sfen && data.userId !== selfUser?.state.value?.id) {
+      setBoard(reverseSfen(data.sfen));
+    }
+  }
+};
+
+const actionCable = useActionCable('ShogiChannel', roomId.value, connectCallable);
+
+onUnmounted(() => {
+  actionCable?.channel.unsubscribe();
+});
 
 const movePiece = (cellIndex: { right: number; left: number }) => {
   // 持ち駒を打った場合
@@ -565,8 +614,6 @@ const movePiece = (cellIndex: { right: number; left: number }) => {
   if (!availableCell || !selectingPiece || !selectingPiece.pieceInfo.piece) return;
 
   setTurn();
-  setCurrentCellIndexWithPieceInfoList();
-  addSfenLog();
 
   shogiCellRefs.value.forEach((cell) => {
     if (
@@ -599,6 +646,22 @@ const movePiece = (cellIndex: { right: number; left: number }) => {
 
   data.value.selectingPiece = undefined;
   clearAvailableRangeCells();
+
+  setCurrentCellIndexWithPieceInfoList();
+  addSfenLog();
+};
+
+const promote = () => {
+  data.value.confirmingPromoteCellRef?.promote();
+
+  setCurrentCellIndexWithPieceInfoList();
+  addSfenLog();
+};
+
+const leaveRoom = () => {
+  actionCable.channel.unsubscribe();
+
+  router.push('/shogi/rooms');
 };
 </script>
 

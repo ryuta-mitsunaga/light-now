@@ -129,20 +129,36 @@ const generateSfen = (
   return sfen.toString();
 };
 
-const convertToCellsFromSfen = (sfen: string): (CellIndex & PieceInfo)[] => {
+/** SFEN形式の文字列をセルに変換して手番とともに返す */
+const convertToCellsFromSfen = (
+  sfen: string
+): {
+  cells: (CellIndex & PieceInfo)[];
+  havingPiece: { black: PieceInfo[]; white: PieceInfo[] };
+  turn: 'black' | 'white';
+} => {
   const cells: (CellIndex & PieceInfo)[] = [];
 
   // sfen の文字を削除
   sfen = sfen.replace(/sfen /, '');
 
-  const splittedSfen = sfen.split(' ')[0].split('/');
+  const splittedSfen = sfen.split(' ');
 
-  splittedSfen.forEach((row, i) => {
+  splittedSfen[0].split('/').forEach((row, i) => {
     let right = 1;
+    let isNextPromote = false;
     row
       .replace(/\//g, '')
       .split('')
       .forEach((cell) => {
+        if (cell === '+') return (isNextPromote = true);
+
+        if (isNextPromote) {
+          isNextPromote = false;
+
+          cell = `+${cell}`;
+        }
+
         // 数字の文字列の場合はその数だけ空のマスを追加
         const toNumberCell = Number(cell);
 
@@ -175,7 +191,60 @@ const convertToCellsFromSfen = (sfen: string): (CellIndex & PieceInfo)[] => {
       });
   });
 
-  return cells;
+  // 持ち駒の情報を追加
+  const havingPiece: {
+    black: PieceInfo[];
+    white: PieceInfo[];
+  } = {
+    // 小文字の場合は後手の駒
+    black: splittedSfen[2].split('').map((piece) => {
+      return {
+        piece: Object.keys(sfenPieceMap).find((key) => {
+          return sfenPieceMap[key as Piece] === piece.toLowerCase();
+        }) as Piece,
+        isBlack: true
+      };
+    }),
+    white: splittedSfen[2].split('').map((piece) => {
+      return {
+        piece: Object.keys(sfenPieceMap).find((key) => {
+          return sfenPieceMap[key as Piece] === piece.toUpperCase();
+        }) as Piece,
+        isBlack: false
+      };
+    })
+  };
+
+  // 実際に表示される手番は逆
+  return { cells, havingPiece, turn: sfen.split(' ')[1] === 'b' ? 'white' : 'black' };
 };
 
-export { generateSfen, convertToCellsFromSfen };
+function reverseSfen(sfen: string): string {
+  // SFENをコンポーネントに分解
+  const [position, turn, hands, moveNumber] = sfen.split(' ');
+
+  // 盤面を行に分割
+  const rows = position.split('/');
+
+  // 盤面を逆順にして、先手と後手の駒を反転
+  const reversedRows = rows
+    .reverse()
+    .map((row) =>
+      row
+        .replace(/[A-Z]/g, (match) => match.toLowerCase())
+        .replace(/[a-z]/g, (match) => match.toUpperCase())
+    );
+
+  // 手番を反転
+  const reversedTurn = turn === 'b' ? 'w' : 'b';
+
+  // 持ち駒を先手と後手で反転
+  const reversedHands = hands
+    .replace(/[A-Z]/g, (match) => match.toLowerCase())
+    .replace(/[a-z]/g, (match) => match.toUpperCase());
+
+  // 再組み立て
+  return `${reversedRows.join('/')} ${reversedTurn} ${reversedHands} ${moveNumber}`;
+}
+
+export { generateSfen, convertToCellsFromSfen, reverseSfen };

@@ -6,6 +6,7 @@ import SendGroups from '../views/SendGroups.vue';
 import LineBot from '../views/LineBot.vue';
 import MyPage from '../views/MyPage.vue';
 import Shogi from '../views/Shogi.vue';
+import ShogiRooms from '../views/ShogiRooms.vue';
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -47,8 +48,13 @@ const router = createRouter({
       component: SignUp
     },
     {
-      path: '/user/:userId/shogi',
-      name: 'shogi',
+      path: '/shogi/rooms',
+      name: 'shogiRooms',
+      component: ShogiRooms
+    },
+    {
+      path: '/shogi/room/:roomId',
+      name: 'shogiRoom',
       component: Shogi
     }
   ]
