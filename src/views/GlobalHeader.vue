@@ -42,7 +42,7 @@
                 >
               </li>
               <li class="nav-item" data-bs-dismiss="offcanvas">
-                <router-link class="nav-link active" :to="to('userGroups')"
+                <router-link class="nav-link active" :to="to('lineBot')"
                   >LINEボット設定</router-link
                 >
               </li>
