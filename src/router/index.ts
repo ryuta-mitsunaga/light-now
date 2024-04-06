@@ -33,7 +33,7 @@ const router = createRouter({
       component: SendGroups
     },
     {
-      path: '/lineBot',
+      path: '/user/:userId/lineBot',
       name: 'lineBot',
       component: LineBot
     },
